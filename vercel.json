@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "pnpm install --frozen-lockfile && pnpm --filter @workspace/netco build",
+  "buildCommand": "pnpm install --frozen-lockfile && pnpm --filter @workspace/netco run build",
   "outputDirectory": "artifacts/netco/dist/public",
   "framework": null,
   "rewrites": [
@@ -15,5 +15,6 @@
   },
   "env": {
     "NODE_ENV": "production"
-  }
+  },
+  "installCommand": "pnpm install --frozen-lockfile"
 }
