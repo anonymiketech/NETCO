@@ -29,18 +29,30 @@ export default function Signup() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
         data: { full_name: name.trim(), phone: phone.trim() },
       },
     });
-    setLoading(false);
     if (error) {
+      setLoading(false);
       toast({ title: "Signup failed", description: error.message, variant: "destructive" });
       return;
     }
+
+    try {
+      await fetch(`${import.meta.env.BASE_URL}api/auth/email/welcome`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+    } catch {
+      // non-fatal — welcome email failure shouldn't block signup
+    }
+
+    setLoading(false);
     setDone(true);
   };
 

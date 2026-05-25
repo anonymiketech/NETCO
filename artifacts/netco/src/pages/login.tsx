@@ -40,12 +40,25 @@ export default function Login() {
       return;
     }
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
-    setLoading(false);
+    const { error, data } = await supabase.auth.resetPasswordForEmail(email.trim());
     if (error) {
+      setLoading(false);
       toast({ title: "Reset failed", description: error.message, variant: "destructive" });
       return;
     }
+
+    try {
+      const resetUrl = `${window.location.origin}/reset-password`;
+      await fetch(`${import.meta.env.BASE_URL}api/auth/email/reset`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), resetUrl }),
+      });
+    } catch {
+      // non-fatal
+    }
+
+    setLoading(false);
     toast({ title: "Check your email", description: "A password reset link has been sent." });
     setResetMode(false);
   };
