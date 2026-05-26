@@ -80,7 +80,7 @@ export default function OrderStatus() {
   };
 
   const fileExt = orderData?.appType === "http_custom" ? ".hc" : ".ehi";
-  const configUrl = paymentStatus?.configUrl;
+  const configUrl = (paymentStatus as unknown as { configUrl?: string | null })?.configUrl;
 
   const progress = Math.min((elapsed / 90) * 100, 95);
 

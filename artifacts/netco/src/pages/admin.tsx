@@ -764,7 +764,7 @@ export default function Admin() {
             {/* Server list */}
             {serversLoading ? (
               <div className="space-y-3">{[1, 2, 3].map((i) => <div key={i} className="glass-card rounded-xl h-28 animate-pulse" />)}</div>
-            ) : (servers as Array<Record<string, unknown>>).length === 0 ? (
+            ) : servers.length === 0 ? (
               <div className="glass-card rounded-xl p-12 text-center space-y-3">
                 <Server className="w-10 h-10 text-muted-foreground mx-auto" />
                 <p className="text-muted-foreground">No config servers yet. Add your first one.</p>
