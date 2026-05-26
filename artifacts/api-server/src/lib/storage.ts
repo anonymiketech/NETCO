@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 import path from "path";
 import fs from "fs";
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL ?? "";
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "";
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
 const useSupabase = Boolean(supabaseUrl && serviceRoleKey);
@@ -12,7 +12,7 @@ const useSupabase = Boolean(supabaseUrl && serviceRoleKey);
 const LOCAL_DIR = path.resolve(process.cwd(), "uploads");
 if (!useSupabase) {
   fs.mkdirSync(LOCAL_DIR, { recursive: true });
-  console.warn("Supabase storage not configured — using local disk storage at ./uploads/");
+  console.warn("⚠️  Supabase storage not configured (missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY) — using local disk storage at ./uploads/");
 }
 
 export const BUCKET = "config-files";

@@ -30,43 +30,49 @@ router.get("/admin/servers", async (req, res) => {
 });
 
 router.post("/admin/servers", upload.single("configFile"), async (req, res) => {
-  if (!req.file) {
-    res.status(400).json({ error: "Config file (.ehi or .hc) is required" });
-    return;
+  try {
+    if (!req.file) {
+      res.status(400).json({ error: "Config file (.ehi or .hc) is required" });
+      return;
+    }
+
+    const { serverName, network, appType, planType, duration } = req.body as Record<string, string>;
+
+    if (!serverName || !network || !appType || !planType || !duration) {
+      res.status(400).json({ error: "All fields are required: serverName, network, appType, planType, duration" });
+      return;
+    }
+
+    const stored = await uploadConfigFile(req.file.buffer, req.file.originalname);
+
+    const id = randomUUID();
+    const now = new Date();
+    const [server] = await db
+      .insert(configServersTable)
+      .values({
+        id,
+        serverName,
+        network,
+        appType,
+        planType,
+        duration,
+        filename: stored.filename,
+        originalName: stored.originalName,
+        fileSize: stored.fileSize,
+        status: "active",
+        isFree: false,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+
+    req.log.info({ id, serverName, network, appType }, "Config server added");
+    res.status(201).json(server);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to add config server";
+    req.log.error({ err, body: req.body }, "Error adding config server");
+    res.status(500).json({ error: message });
   }
-
-  const { serverName, network, appType, planType, duration } = req.body as Record<string, string>;
-
-  if (!serverName || !network || !appType || !planType || !duration) {
-    res.status(400).json({ error: "All fields are required: serverName, network, appType, planType, duration" });
-    return;
-  }
-
-  const stored = await uploadConfigFile(req.file.buffer, req.file.originalname);
-
-  const id = randomUUID();
-  const now = new Date();
-  const [server] = await db
-    .insert(configServersTable)
-    .values({
-      id,
-      serverName,
-      network,
-      appType,
-      planType,
-      duration,
-      filename: stored.filename,
-      originalName: stored.originalName,
-      fileSize: stored.fileSize,
-      status: "active",
-      isFree: false,
-      createdAt: now,
-      updatedAt: now,
-    })
-    .returning();
-
-  req.log.info({ id, serverName, network, appType }, "Config server added");
-  res.status(201).json(server);
 });
 
 router.patch("/admin/servers/:id", async (req, res) => {
@@ -102,40 +108,46 @@ router.patch("/admin/servers/:id", async (req, res) => {
 });
 
 router.put("/admin/servers/:id/file", upload.single("configFile"), async (req, res) => {
-  const id = req.params["id"] as string;
+  try {
+    const id = req.params["id"] as string;
 
-  if (!req.file) {
-    res.status(400).json({ error: "Config file (.ehi or .hc) is required" });
-    return;
+    if (!req.file) {
+      res.status(400).json({ error: "Config file (.ehi or .hc) is required" });
+      return;
+    }
+
+    const [existing] = await db
+      .select()
+      .from(configServersTable)
+      .where(eq(configServersTable.id, id))
+      .limit(1);
+
+    if (!existing) {
+      res.status(404).json({ error: "Config server not found" });
+      return;
+    }
+
+    await deleteConfigFile(existing.filename).catch(() => {});
+
+    const stored = await uploadConfigFile(req.file.buffer, req.file.originalname);
+
+    const [updated] = await db
+      .update(configServersTable)
+      .set({
+        filename: stored.filename,
+        originalName: stored.originalName,
+        fileSize: stored.fileSize,
+      })
+      .where(eq(configServersTable.id, id))
+      .returning();
+
+    req.log.info({ id, newFile: stored.filename }, "Config file replaced");
+    res.json(updated);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to replace config file";
+    req.log.error({ err }, "Error replacing config file");
+    res.status(500).json({ error: message });
   }
-
-  const [existing] = await db
-    .select()
-    .from(configServersTable)
-    .where(eq(configServersTable.id, id))
-    .limit(1);
-
-  if (!existing) {
-    res.status(404).json({ error: "Config server not found" });
-    return;
-  }
-
-  await deleteConfigFile(existing.filename).catch(() => {});
-
-  const stored = await uploadConfigFile(req.file.buffer, req.file.originalname);
-
-  const [updated] = await db
-    .update(configServersTable)
-    .set({
-      filename: stored.filename,
-      originalName: stored.originalName,
-      fileSize: stored.fileSize,
-    })
-    .where(eq(configServersTable.id, id))
-    .returning();
-
-  req.log.info({ id, newFile: stored.filename }, "Config file replaced");
-  res.json(updated);
 });
 
 router.delete("/admin/servers/:id", async (req, res) => {
