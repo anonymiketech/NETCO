@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "NETCO VPN Platform"
+version = "1.0.0"
+id = "artifacts/netco"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21743
+
+[services.development]
+run = "pnpm --filter @workspace/netco run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/netco", "run", "build" ]
+publicDir = "artifacts/netco/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21743"
+BASE_PATH = "/"

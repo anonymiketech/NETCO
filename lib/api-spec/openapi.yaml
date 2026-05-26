@@ -1,22 +1,33 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: NETCO VPN Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: packages
+    description: VPN package operations
+  - name: orders
+    description: Order operations
+  - name: payment
+    description: Payment operations
+  - name: plans
+    description: User plan operations
+  - name: contact
+    description: Contact operations
+  - name: stats
+    description: Platform statistics
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +35,277 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /packages:
+    get:
+      operationId: listPackages
+      tags: [packages]
+      summary: List all VPN packages grouped by network
+      responses:
+        "200":
+          description: List of networks with packages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NetworkData"
+
+  /packages/{id}:
+    get:
+      operationId: getPackage
+      tags: [packages]
+      summary: Get a specific package plan
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Package plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PackagePlan"
+        "404":
+          description: Not found
+
+  /orders:
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Create a new order and initiate payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderInput"
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Bad request
+
+  /orders/{id}:
+    get:
+      operationId: getOrder
+      tags: [orders]
+      summary: Get order by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          description: Not found
+
+  /payment/initiate:
+    post:
+      operationId: initiatePayment
+      tags: [payment]
+      summary: Initiate M-Pesa STK Push
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentInput"
+      responses:
+        "200":
+          description: Payment initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentInitiated"
+        "400":
+          description: Bad request
+
+  /payment/status/{reference}:
+    get:
+      operationId: checkPaymentStatus
+      tags: [payment]
+      summary: Check M-Pesa payment status
+      parameters:
+        - in: path
+          name: reference
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Payment status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentStatus"
+        "404":
+          description: Not found
+
+  /plans:
+    get:
+      operationId: listPlans
+      tags: [plans]
+      summary: List user active plans (by phone or device ID)
+      parameters:
+        - in: query
+          name: phone
+          schema:
+            type: string
+        - in: query
+          name: deviceId
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of user plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserPlan"
+
+  /contact:
+    post:
+      operationId: submitContact
+      tags: [contact]
+      summary: Submit a contact/support message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactInput"
+      responses:
+        "201":
+          description: Message submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactMessage"
+        "400":
+          description: Bad request
+
+  /stats:
+    get:
+      operationId: getPlatformStats
+      tags: [stats]
+      summary: Get platform-wide statistics
+      responses:
+        "200":
+          description: Platform statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformStats"
+
+  /server-status:
+    get:
+      operationId: getServerStatus
+      tags: [stats]
+      summary: Get VPN server status
+      responses:
+        "200":
+          description: Server status list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServerStatus"
+
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [stats]
+      summary: Get admin dashboard statistics
+      responses:
+        "200":
+          description: Admin statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /admin/servers:
+    get:
+      operationId: listConfigServers
+      tags: [stats]
+      summary: List all VPN config servers
+      responses:
+        "200":
+          description: List of config servers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConfigServer"
+
+  /admin/servers/{id}:
+    delete:
+      operationId: deleteConfigServer
+      tags: [stats]
+      summary: Delete a config server
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        "404":
+          description: Not found
+    patch:
+      operationId: updateConfigServerStatus
+      tags: [stats]
+      summary: Toggle config server active/inactive status
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfigServerStatusUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConfigServer"
+        "404":
+          description: Not found
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +316,336 @@ components:
       required:
         - status
 
+    PackagePlan:
+      type: object
+      required: [id, name, speed, dailyPrice, weeklyPrice, monthlyPrice, features]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        speed:
+          type: string
+        description:
+          type: ["string", "null"]
+        dailyPrice:
+          type: number
+        weeklyPrice:
+          type: number
+        monthlyPrice:
+          type: number
+        dailyLabel:
+          type: string
+        weeklyLabel:
+          type: string
+        monthlyLabel:
+          type: string
+        popular:
+          type: boolean
+        features:
+          type: array
+          items:
+            type: string
+
+    PackageCategory:
+      type: object
+      required: [id, name, plans]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        plans:
+          type: array
+          items:
+            $ref: "#/components/schemas/PackagePlan"
+
+    NetworkData:
+      type: object
+      required: [id, name, color, categories]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        color:
+          type: string
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/PackageCategory"
+
+    OrderInput:
+      type: object
+      required: [packageId, network, duration, appType, deviceId, phone]
+      properties:
+        packageId:
+          type: string
+        network:
+          type: string
+        duration:
+          type: string
+          enum: [daily, weekly, monthly]
+        appType:
+          type: string
+          enum: [http_custom, http_injector]
+        deviceId:
+          type: string
+        phone:
+          type: string
+        amount:
+          type: number
+
+    Order:
+      type: object
+      required: [id, packageId, network, duration, appType, deviceId, phone, amount, status, createdAt]
+      properties:
+        id:
+          type: string
+        packageId:
+          type: string
+        network:
+          type: string
+        duration:
+          type: string
+        appType:
+          type: string
+        deviceId:
+          type: string
+        phone:
+          type: string
+        amount:
+          type: number
+        status:
+          type: string
+          enum: [pending, completed, failed, cancelled]
+        paymentReference:
+          type: ["string", "null"]
+        configUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: ["string", "null"]
+
+    PaymentInput:
+      type: object
+      required: [phone, amount, orderId]
+      properties:
+        phone:
+          type: string
+        amount:
+          type: number
+        orderId:
+          type: string
+
+    PaymentInitiated:
+      type: object
+      required: [success, reference, message]
+      properties:
+        success:
+          type: boolean
+        reference:
+          type: string
+        message:
+          type: string
+        checkoutRequestId:
+          type: ["string", "null"]
+
+    PaymentStatus:
+      type: object
+      required: [reference, status]
+      properties:
+        reference:
+          type: string
+        status:
+          type: string
+          enum: [pending, completed, failed, cancelled, timeout]
+        message:
+          type: ["string", "null"]
+        completedAt:
+          type: ["string", "null"]
+
+    UserPlan:
+      type: object
+      required: [id, network, planName, planType, duration, appType, deviceId, expiryDate, status]
+      properties:
+        id:
+          type: string
+        network:
+          type: string
+        planName:
+          type: string
+        planType:
+          type: string
+        duration:
+          type: string
+        appType:
+          type: string
+        deviceId:
+          type: string
+        expiryDate:
+          type: string
+        status:
+          type: string
+          enum: [active, expired]
+        configUrl:
+          type: ["string", "null"]
+        fileExtension:
+          type: ["string", "null"]
+        speed:
+          type: ["string", "null"]
+
+    ContactInput:
+      type: object
+      required: [name, email, message]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        subject:
+          type: ["string", "null"]
+        message:
+          type: string
+
+    ContactMessage:
+      type: object
+      required: [id, name, email, message, createdAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        subject:
+          type: ["string", "null"]
+        message:
+          type: string
+        createdAt:
+          type: string
+
+    PlatformStats:
+      type: object
+      required: [activeUsers, serversOnline, totalServers, uptime, supportHours]
+      properties:
+        activeUsers:
+          type: integer
+        serversOnline:
+          type: integer
+        totalServers:
+          type: integer
+        uptime:
+          type: number
+        supportHours:
+          type: string
+
+    ServerStatus:
+      type: object
+      required: [id, name, network, location, status, load, ping]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        network:
+          type: string
+        location:
+          type: string
+        status:
+          type: string
+          enum: [online, maintenance, offline]
+        load:
+          type: integer
+        ping:
+          type: integer
+
+    AdminStats:
+      type: object
+      required: [totalOrders, totalRevenue, activeUsers, activePlans, revenueByNetwork, revenueByMonth]
+      properties:
+        totalOrders:
+          type: integer
+        totalRevenue:
+          type: number
+        activeUsers:
+          type: integer
+        activePlans:
+          type: integer
+        revenueByNetwork:
+          type: array
+          items:
+            $ref: "#/components/schemas/RevenueByNetwork"
+        revenueByMonth:
+          type: array
+          items:
+            $ref: "#/components/schemas/RevenueByMonth"
+
+    RevenueByNetwork:
+      type: object
+      required: [network, revenue, orders]
+      properties:
+        network:
+          type: string
+        revenue:
+          type: number
+        orders:
+          type: integer
+
+    RevenueByMonth:
+      type: object
+      required: [month, revenue, orders]
+      properties:
+        month:
+          type: string
+        revenue:
+          type: number
+        orders:
+          type: integer
+
+    ConfigServer:
+      type: object
+      required: [id, serverName, network, appType, planType, duration, filename, originalName, status, createdAt]
+      properties:
+        id:
+          type: string
+        serverName:
+          type: string
+        network:
+          type: string
+          enum: [safaricom, airtel, telkom]
+        appType:
+          type: string
+          enum: [http_custom, http_injector]
+        planType:
+          type: string
+          enum: [unlimited, capped, wifi]
+        duration:
+          type: string
+          enum: [daily, weekly, monthly]
+        filename:
+          type: string
+        originalName:
+          type: string
+        fileSize:
+          type: ["integer", "null"]
+        status:
+          type: string
+          enum: [active, inactive]
+        createdAt:
+          type: string
+        updatedAt:
+          type: ["string", "null"]
+
+    ConfigServerStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [active, inactive]
