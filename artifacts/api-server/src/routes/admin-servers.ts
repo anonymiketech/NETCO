@@ -1,28 +1,15 @@
 import { Router } from "express";
 import multer from "multer";
 import path from "path";
-import fs from "fs";
 import { randomUUID } from "crypto";
 import { db, configServersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { uploadConfigFile, downloadConfigFile, deleteConfigFile } from "../lib/storage";
 
 const router = Router();
 
-const UPLOADS_DIR = path.resolve(process.cwd(), "uploads");
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, `${randomUUID()}${ext}`);
-  },
-});
-
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
@@ -40,7 +27,6 @@ router.get("/admin/servers", async (req, res) => {
     .from(configServersTable)
     .orderBy(configServersTable.createdAt);
   res.json(servers);
-  return;
 });
 
 router.post("/admin/servers", upload.single("configFile"), async (req, res) => {
@@ -52,12 +38,14 @@ router.post("/admin/servers", upload.single("configFile"), async (req, res) => {
   const { serverName, network, appType, planType, duration } = req.body as Record<string, string>;
 
   if (!serverName || !network || !appType || !planType || !duration) {
-    fs.unlinkSync(req.file.path);
     res.status(400).json({ error: "All fields are required: serverName, network, appType, planType, duration" });
     return;
   }
 
+  const stored = await uploadConfigFile(req.file.buffer, req.file.originalname);
+
   const id = randomUUID();
+  const now = new Date();
   const [server] = await db
     .insert(configServersTable)
     .values({
@@ -67,16 +55,18 @@ router.post("/admin/servers", upload.single("configFile"), async (req, res) => {
       appType,
       planType,
       duration,
-      filename: req.file.filename,
-      originalName: req.file.originalname,
-      fileSize: req.file.size,
+      filename: stored.filename,
+      originalName: stored.originalName,
+      fileSize: stored.fileSize,
       status: "active",
+      isFree: false,
+      createdAt: now,
+      updatedAt: now,
     })
     .returning();
 
   req.log.info({ id, serverName, network, appType }, "Config server added");
   res.status(201).json(server);
-  return;
 });
 
 router.patch("/admin/servers/:id", async (req, res) => {
@@ -109,7 +99,6 @@ router.patch("/admin/servers/:id", async (req, res) => {
   }
 
   res.json(updated);
-  return;
 });
 
 router.put("/admin/servers/:id/file", upload.single("configFile"), async (req, res) => {
@@ -127,29 +116,26 @@ router.put("/admin/servers/:id/file", upload.single("configFile"), async (req, r
     .limit(1);
 
   if (!existing) {
-    fs.unlinkSync(req.file.path);
     res.status(404).json({ error: "Config server not found" });
     return;
   }
 
-  const oldPath = path.join(UPLOADS_DIR, existing.filename);
-  if (fs.existsSync(oldPath)) {
-    fs.unlinkSync(oldPath);
-  }
+  await deleteConfigFile(existing.filename).catch(() => {});
+
+  const stored = await uploadConfigFile(req.file.buffer, req.file.originalname);
 
   const [updated] = await db
     .update(configServersTable)
     .set({
-      filename: req.file.filename,
-      originalName: req.file.originalname,
-      fileSize: req.file.size,
+      filename: stored.filename,
+      originalName: stored.originalName,
+      fileSize: stored.fileSize,
     })
     .where(eq(configServersTable.id, id))
     .returning();
 
-  req.log.info({ id, newFile: req.file.filename }, "Config file replaced");
+  req.log.info({ id, newFile: stored.filename }, "Config file replaced");
   res.json(updated);
-  return;
 });
 
 router.delete("/admin/servers/:id", async (req, res) => {
@@ -166,16 +152,11 @@ router.delete("/admin/servers/:id", async (req, res) => {
     return;
   }
 
-  const filePath = path.join(UPLOADS_DIR, existing.filename);
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
-  }
-
+  await deleteConfigFile(existing.filename).catch(() => {});
   await db.delete(configServersTable).where(eq(configServersTable.id, id));
 
   req.log.info({ id }, "Config server deleted");
   res.json({ success: true });
-  return;
 });
 
 router.get("/admin/servers/:id/download", async (req, res) => {
@@ -192,16 +173,12 @@ router.get("/admin/servers/:id/download", async (req, res) => {
     return;
   }
 
-  const filePath = path.join(UPLOADS_DIR, server.filename);
-  if (!fs.existsSync(filePath)) {
-    res.status(404).json({ error: "File not found on disk" });
-    return;
-  }
+  const buffer = await downloadConfigFile(server.filename);
 
   res.setHeader("Content-Disposition", `attachment; filename="${server.originalName}"`);
   res.setHeader("Content-Type", "application/octet-stream");
-  res.sendFile(filePath);
-  return;
+  res.setHeader("Content-Length", buffer.byteLength);
+  res.send(buffer);
 });
 
 export default router;

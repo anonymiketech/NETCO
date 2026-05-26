@@ -4,11 +4,9 @@ import { db, ordersTable, configServersTable, userPlansTable } from "@workspace/
 import { eq, and } from "drizzle-orm";
 import { CreateOrderBody } from "@workspace/api-zod";
 import path from "path";
-import fs from "fs";
+import { downloadConfigFile } from "../lib/storage";
 
 const router = Router();
-
-const UPLOADS_DIR = path.resolve(process.cwd(), "uploads");
 
 function expiryFromDuration(duration: string): Date {
   const now = new Date();
@@ -78,12 +76,6 @@ router.post("/free", async (req, res) => {
 
   if (!freeServer) {
     res.status(404).json({ error: "No free config available for this combination" });
-    return;
-  }
-
-  const filePath = path.join(UPLOADS_DIR, freeServer.filename);
-  if (!fs.existsSync(filePath)) {
-    res.status(404).json({ error: "Free config file not found" });
     return;
   }
 
@@ -169,15 +161,12 @@ router.get("/:id/download", async (req, res) => {
     return;
   }
 
-  const filePath = path.join(UPLOADS_DIR, server.filename);
-  if (!fs.existsSync(filePath)) {
-    res.status(404).json({ error: "Config file not found on disk" });
-    return;
-  }
+  const buffer = await downloadConfigFile(server.filename);
 
   res.setHeader("Content-Disposition", `attachment; filename="${server.originalName}"`);
   res.setHeader("Content-Type", "application/octet-stream");
-  res.sendFile(filePath);
+  res.setHeader("Content-Length", buffer.byteLength);
+  res.send(buffer);
 });
 
 function calculateAmount(network: string, duration: string): number {

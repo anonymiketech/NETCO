@@ -4,7 +4,7 @@ import { db, ordersTable, configServersTable, userPlansTable } from "@workspace/
 import { eq, and } from "drizzle-orm";
 import { InitiatePaymentBody } from "@workspace/api-zod";
 import path from "path";
-import fs from "fs";
+import { downloadConfigFile } from "../lib/storage";
 
 const router = Router();
 
@@ -12,7 +12,6 @@ const PAYFLOW_BASE = "https://payflow.top/api/v2";
 const PAYFLOW_API_KEY = process.env.PAYFLOW_API_KEY ?? "";
 const PAYFLOW_API_SECRET = process.env.PAYFLOW_API_SECRET ?? "";
 const PAYFLOW_ACCOUNT_ID = Number(process.env.PAYFLOW_ACCOUNT_ID ?? "0");
-const UPLOADS_DIR = path.resolve(process.cwd(), "uploads");
 
 function payflowHeaders() {
   return {
@@ -61,9 +60,11 @@ async function autoFulfillOrder(orderId: string, logger: typeof console) {
       return;
     }
 
-    const filePath = path.join(UPLOADS_DIR, server.filename);
-    if (!fs.existsSync(filePath)) {
-      logger.warn?.(`Config file missing on disk for server ${server.id}`);
+    // Verify file exists in Supabase Storage
+    try {
+      await downloadConfigFile(server.filename);
+    } catch {
+      logger.warn?.(`Config file missing in storage for server ${server.id}`);
       return;
     }
 
