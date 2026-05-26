@@ -263,17 +263,22 @@ export default function Admin() {
       fd.append("planType", form.planType);
       fd.append("duration", form.duration);
       fd.append("configFile", form.file);
-      const res = await fetch(apiUrl("/api/admin/servers"), { method: "POST", body: fd });
+      const url = apiUrl("/api/admin/servers");
+      console.log("[v0] Uploading config file to:", url);
+      const res = await fetch(url, { method: "POST", body: fd });
+      console.log("[v0] Upload response:", res.status);
       if (!res.ok) {
         const err = await res.json() as { error?: string };
-        throw new Error(err.error ?? "Upload failed");
+        throw new Error(err.error ?? `Upload failed with status ${res.status}`);
       }
       await queryClient.invalidateQueries({ queryKey: getListConfigServersQueryKey() });
       setShowAddForm(false);
       setForm(EMPTY_FORM);
       toast({ title: "Config server added", description: `"${form.serverName}" is now live.` });
     } catch (err) {
-      toast({ title: "Upload failed", description: (err as Error).message, variant: "destructive" });
+      const message = err instanceof Error ? err.message : "Upload failed - network error or server unreachable";
+      console.error("[v0] Upload error:", err);
+      toast({ title: "Upload failed", description: message, variant: "destructive" });
     } finally {
       setUploading(false);
     }
@@ -307,17 +312,22 @@ export default function Admin() {
     try {
       const fd = new FormData();
       fd.append("configFile", replaceFile);
-      const res = await fetch(apiUrl(`/api/admin/servers/${id}/file`), { method: "PUT", body: fd });
+      const url = apiUrl(`/api/admin/servers/${id}/file`);
+      console.log("[v0] Replacing config file at:", url);
+      const res = await fetch(url, { method: "PUT", body: fd });
+      console.log("[v0] Replace response:", res.status);
       if (!res.ok) {
         const err = await res.json() as { error?: string };
-        throw new Error(err.error ?? "Replace failed");
+        throw new Error(err.error ?? `Replace failed with status ${res.status}`);
       }
       await queryClient.invalidateQueries({ queryKey: getListConfigServersQueryKey() });
       setReplaceId(null);
       setReplaceFile(null);
       toast({ title: "Config file replaced" });
     } catch (err) {
-      toast({ title: "Replace failed", description: (err as Error).message, variant: "destructive" });
+      const message = err instanceof Error ? err.message : "Replace failed - network error or server unreachable";
+      console.error("[v0] Replace error:", err);
+      toast({ title: "Replace failed", description: message, variant: "destructive" });
     } finally {
       setUploading(false);
     }
