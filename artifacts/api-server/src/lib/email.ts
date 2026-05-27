@@ -129,3 +129,42 @@ export async function sendWelcomeEmail(email: string) {
     html: netcoHtml("Welcome to NETCO VPN", body),
   });
 }
+
+export async function sendAnnouncementEmail(email: string, subject: string, title: string, content: string, ctaUrl?: string, ctaText?: string) {
+  let body = `
+    <h2 style="color:#ffffff;font-size:22px;margin:0 0 12px;">${title}</h2>
+    <div style="color:#94a3b8;font-size:15px;line-height:1.8;margin:0 0 28px;">
+      ${content}
+    </div>`;
+
+  if (ctaUrl && ctaText) {
+    body += `
+    <div style="text-align:center;margin:32px 0;">
+      <a href="${ctaUrl}"
+         style="display:inline-block;background:linear-gradient(135deg,#00e5ff,#0077b6);color:#0a0f1e;font-weight:700;font-size:15px;padding:14px 36px;border-radius:8px;text-decoration:none;letter-spacing:0.5px;">
+        ${ctaText}
+      </a>
+    </div>`;
+  }
+
+  return getResend().emails.send({
+    from: FROM,
+    to: email,
+    subject,
+    html: netcoHtml(title, body),
+  });
+}
+
+export async function sendBulkAnnouncement(emails: string[], subject: string, title: string, content: string, ctaUrl?: string, ctaText?: string) {
+  const resend = getResend();
+  const results = await Promise.allSettled(
+    emails.map((email) =>
+      sendAnnouncementEmail(email, subject, title, content, ctaUrl, ctaText)
+    )
+  );
+
+  const succeeded = results.filter((r) => r.status === "fulfilled").length;
+  const failed = results.filter((r) => r.status === "rejected").length;
+
+  return { succeeded, failed, total: emails.length };
+}
