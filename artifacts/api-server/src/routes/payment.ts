@@ -107,19 +107,19 @@ async function autoFulfillOrder(orderId: string, logger: MinimalLogger) {
 }
 
 router.post("/initiate", async (req, res) => {
-  const parsed = InitiatePaymentBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Invalid request body", details: parsed.error.issues });
-    return;
-  }
-
-  const { phone, amount, orderId } = parsed.data;
-  const reference = `NETCO-${randomUUID().slice(0, 8).toUpperCase()}`;
-  const phoneFormatted = normalizePhone(phone);
-
-  req.log.info({ phone: phoneFormatted, amount, orderId, reference }, "Initiating PayFlow STK push");
-
   try {
+    const parsed = InitiatePaymentBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid request body", details: parsed.error.issues });
+      return;
+    }
+
+    const { phone, amount, orderId } = parsed.data;
+    const reference = `NETCO-${randomUUID().slice(0, 8).toUpperCase()}`;
+    const phoneFormatted = normalizePhone(phone);
+
+    req.log.info({ phone: phoneFormatted, amount, orderId, reference }, "Initiating PayFlow STK push");
+
     const body = {
       payment_account_id: PAYFLOW_ACCOUNT_ID,
       phone: phoneFormatted,
@@ -166,7 +166,7 @@ router.post("/initiate", async (req, res) => {
       message: `M-Pesa STK Push sent to ${phone}. Enter your PIN on your phone.`,
     });
   } catch (err) {
-    req.log.error({ err }, "PayFlow request failed");
+    req.log.error({ err, body: req.body }, "PayFlow request failed");
     res.status(503).json({ error: "Payment service unreachable. Please try again shortly." });
   }
 });
