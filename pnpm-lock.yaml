@@ -631,7 +631,7 @@ importers:
   lib/db:
     dependencies:
       drizzle-orm:
-        specifier: 'catalog:'
+        specifier: ^0.45.2
         version: 0.45.2(@types/pg@8.20.0)(pg@8.20.0)
       drizzle-zod:
         specifier: ^0.8.3

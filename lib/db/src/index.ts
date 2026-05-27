@@ -4,11 +4,11 @@ import * as schema from "./schema";
 
 const { Pool } = pg;
 
-const dbUrl = process.env.SUPABASE_DATABASE_URL ?? process.env.DATABASE_URL;
+const dbUrl = process.env.POSTGRES_URL ?? process.env.SUPABASE_DATABASE_URL ?? process.env.DATABASE_URL;
 
 if (!dbUrl) {
   throw new Error(
-    "SUPABASE_DATABASE_URL (or DATABASE_URL) must be set.",
+    "POSTGRES_URL (or SUPABASE_DATABASE_URL or DATABASE_URL) must be set.",
   );
 }
 

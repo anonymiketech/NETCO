@@ -17,32 +17,38 @@ function expiryFromDuration(duration: string): Date {
 }
 
 router.post("/", async (req, res) => {
-  const parsed = CreateOrderBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Invalid request body", details: parsed.error.issues });
-    return;
+  try {
+    const parsed = CreateOrderBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid request body", details: parsed.error.issues });
+      return;
+    }
+
+    const body = parsed.data;
+    const id = randomUUID();
+    const amount = body.amount ?? calculateAmount(body.network, body.duration);
+
+    const [order] = await db
+      .insert(ordersTable)
+      .values({
+        id,
+        packageId: body.packageId,
+        network: body.network,
+        duration: body.duration,
+        appType: body.appType,
+        deviceId: body.deviceId,
+        phone: body.phone,
+        amount: String(amount),
+        status: "pending",
+      })
+      .returning();
+
+    res.status(201).json(formatOrder(order));
+  } catch (err) {
+    req.log.error({ err, body: req.body }, "Error creating order");
+    const message = err instanceof Error ? err.message : "Failed to create order";
+    res.status(500).json({ error: message });
   }
-
-  const body = parsed.data;
-  const id = randomUUID();
-  const amount = body.amount ?? calculateAmount(body.network, body.duration);
-
-  const [order] = await db
-    .insert(ordersTable)
-    .values({
-      id,
-      packageId: body.packageId,
-      network: body.network,
-      duration: body.duration,
-      appType: body.appType,
-      deviceId: body.deviceId,
-      phone: body.phone,
-      amount: String(amount),
-      status: "pending",
-    })
-    .returning();
-
-  res.status(201).json(formatOrder(order));
 });
 
 router.post("/free", async (req, res) => {
