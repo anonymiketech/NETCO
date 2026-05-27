@@ -20,6 +20,7 @@ import Contact from "@/pages/contact";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import CheckExpiry from "@/pages/check-expiry";
+import Account from "@/pages/account";
 import Admin from "@/pages/admin";
 import OrderStatus from "@/pages/order-status";
 import Terms from "@/pages/terms";
@@ -66,6 +67,7 @@ function Router() {
       <Route path="/pricing" component={Pricing} />
       <Route path="/checkout" component={Checkout} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/account" component={Account} />
       <Route path="/how-to-connect" component={HowToConnect} />
       <Route path="/server-status" component={ServerStatus} />
       <Route path="/faqs" component={FAQs} />

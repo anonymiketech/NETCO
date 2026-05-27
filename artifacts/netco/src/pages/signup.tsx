@@ -43,14 +43,23 @@ export default function Signup() {
       return;
     }
 
+    // Create user profile in our database
     try {
-      await fetch(apiUrl("api/auth/email/welcome"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
-      });
-    } catch {
-      // non-fatal — welcome email failure shouldn't block signup
+      if (data.user) {
+        await fetch(apiUrl("api/auth/profile/create"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            supabaseUid: data.user.id,
+            email: email.trim(),
+            fullName: name.trim() || undefined,
+            phone: phone.trim() || undefined,
+          }),
+        });
+      }
+    } catch (profileErr) {
+      console.error("[v0] Profile creation error:", profileErr);
+      // Non-fatal — profile creation failure shouldn't block signup
     }
 
     setLoading(false);
