@@ -46,8 +46,7 @@ export default function Signup() {
     // Create user profile in our database
     try {
       if (data.user) {
-        const profileUrl = apiUrl("/api/auth/profile/create");
-        console.log("[v0] Creating profile at:", profileUrl);
+        const profileUrl = apiUrl("/auth/profile/create");
         const profileRes = await fetch(profileUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -58,7 +57,6 @@ export default function Signup() {
             phone: phone.trim() || undefined,
           }),
         });
-        console.log("[v0] Profile response status:", profileRes.status);
         if (!profileRes.ok) {
           const profileError = await profileRes.json().catch(() => ({}));
           console.error("[v0] Profile creation failed:", profileError);
