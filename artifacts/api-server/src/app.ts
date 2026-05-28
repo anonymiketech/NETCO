@@ -27,8 +27,20 @@ app.use(
   }),
 );
 app.use(cors());
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Custom middleware to handle JSON parsing while allowing multipart uploads
+// This prevents express.json() from trying to parse file upload streams
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const contentType = req.headers["content-type"] || "";
+  // Skip JSON parsing for multipart form data (file uploads)
+  // Let multer and its handlers process these instead
+  if (contentType.includes("multipart/form-data")) {
+    return next();
+  }
+  // For all other requests, parse as JSON
+  express.json()(req, res, next);
+});
 
 app.use("/api", router);
 
