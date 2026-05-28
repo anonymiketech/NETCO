@@ -3,8 +3,10 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Shield, Zap, Globe, Cpu, ArrowRight } from "lucide-react";
 import { useGetPlatformStats, useListPackages } from "@workspace/api-client-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Home() {
+  const { user } = useAuth();
   const { data: stats } = useGetPlatformStats();
   const { data: packages } = useListPackages();
 
