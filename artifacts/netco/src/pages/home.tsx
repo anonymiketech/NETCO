@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Shield, Zap, Globe, Cpu, ArrowRight, Server, Check, Gift } from "lucide-react";
+import { Shield, Zap, Globe, Cpu, ArrowRight, Server, Check, Gift, Lock } from "lucide-react";
 import { useGetPlatformStats, useListPackages, useListConfigServers } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -17,10 +17,19 @@ function networkColor(network: string) {
 
 export default function Home() {
   const { user } = useAuth();
+  const [, navigate] = useLocation();
   const { data: stats } = useGetPlatformStats();
   const { data: packages } = useListPackages();
   const { data: servers = [] } = useListConfigServers();
   const activeServers = servers.filter((s: any) => s.status === "active");
+
+  const handleProtectedLink = (href: string) => {
+    if (!user) {
+      navigate("/signup");
+    } else {
+      navigate(href);
+    }
+  };
 
   return (
     <div className="flex flex-col w-full min-h-screen">
@@ -45,11 +54,13 @@ export default function Home() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Link href="/pricing">
-              <Button size="lg" className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 glow-primary-hover font-bold px-8 h-12 text-lg">
-                Get Access Now <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-            </Link>
+            <Button 
+              size="lg" 
+              onClick={() => handleProtectedLink("/pricing")}
+              className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 glow-primary-hover font-bold px-8 h-12 text-lg"
+            >
+              Get Access Now <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
             <Link href="/how-to-connect">
               <Button size="lg" variant="outline" className="w-full sm:w-auto border-primary/50 hover:bg-primary/10 h-12 text-lg">
                 How It Works
@@ -96,6 +107,12 @@ export default function Home() {
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                 Select from our curated collection of high-speed configurations optimized for your network and usage.
               </p>
+              {!user && (
+                <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-warning/10 text-warning border border-warning/30">
+                  <Lock className="w-4 h-4" />
+                  <span className="text-sm font-medium">Sign in to purchase configs</span>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -148,11 +165,12 @@ export default function Home() {
                     )}
 
                     {/* CTA Button */}
-                    <Link href="/pricing">
-                      <Button className="w-full mt-4 bg-primary text-primary-foreground hover:bg-primary/90">
-                        Get Access <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
-                    </Link>
+                    <Button 
+                      onClick={() => handleProtectedLink("/pricing")}
+                      className="w-full mt-4 bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      {user ? "Get Access" : "Sign In to Buy"} <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -161,11 +179,13 @@ export default function Home() {
             {/* CTA Section */}
             <div className="text-center space-y-4 pt-8">
               <p className="text-muted-foreground">Ready to unlock the web?</p>
-              <Link href="/pricing">
-                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 glow-primary-hover font-bold px-8 h-12 text-lg">
-                  View All Plans <ArrowRight className="ml-2 w-5 h-5" />
-                </Button>
-              </Link>
+              <Button 
+                size="lg" 
+                onClick={() => handleProtectedLink("/pricing")}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 glow-primary-hover font-bold px-8 h-12 text-lg"
+              >
+                View All Plans <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
             </div>
           </div>
         </section>

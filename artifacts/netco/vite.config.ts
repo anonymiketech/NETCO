@@ -70,6 +70,7 @@ export default defineConfig({
     fs: {
       strict: true,
     },
+    middlewareMode: false,
   },
   preview: {
     port,
