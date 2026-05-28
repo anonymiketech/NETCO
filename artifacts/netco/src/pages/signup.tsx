@@ -43,30 +43,21 @@ export default function Signup() {
       return;
     }
 
-    // Create user profile in our database
-    try {
-      if (data.user) {
-        const profileUrl = apiUrl("/api/auth/profile/create");
-        console.log("[v0] Creating profile at:", profileUrl);
-        const profileRes = await fetch(profileUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            supabaseUid: data.user.id,
-            email: email.trim(),
-            fullName: name.trim() || undefined,
-            phone: phone.trim() || undefined,
-          }),
-        });
-        console.log("[v0] Profile response status:", profileRes.status);
-        if (!profileRes.ok) {
-          const profileError = await profileRes.json().catch(() => ({}));
-          console.error("[v0] Profile creation failed:", profileError);
-        }
-      }
-    } catch (profileErr) {
-      console.error("[v0] Profile creation error:", profileErr);
-      // Non-fatal — profile creation failure shouldn't block signup
+    // Create user profile in our database (fire and forget - non-blocking)
+    if (data.user) {
+      const profileUrl = apiUrl("/api/auth/profile/create");
+      fetch(profileUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          supabaseUid: data.user.id,
+          email: email.trim(),
+          fullName: name.trim() || undefined,
+          phone: phone.trim() || undefined,
+        }),
+      }).catch(() => {
+        // Silently ignore profile creation errors - user can still use the account
+      });
     }
 
     setLoading(false);

@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Check, Zap, Star } from "lucide-react";
 import { useListPackages } from "@workspace/api-client-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const FAQS = [
   { q: "What apps do I need?", a: "You need HTTP Custom (for .hc files) or HTTP Injector (for .ehi files). Both are free on the Google Play Store." },
@@ -22,6 +23,8 @@ const DURATIONS = [
 ];
 
 export default function Pricing() {
+  const [, navigate] = useLocation();
+  const { user } = useAuth();
   const { data: networks, isLoading } = useListPackages();
   const [activeNetwork, setActiveNetwork] = useState(0);
   const [activeCategory, setActiveCategory] = useState(0);
@@ -175,21 +178,34 @@ export default function Pricing() {
                     </ul>
 
                     {price > 0 ? (
-                      <Link
-                        href="/checkout"
-                        state={{ plan, network: network?.name, duration: activeDuration, amount: price }}
-                        data-testid={`button-select-${plan.id}`}
-                      >
+                      user ? (
+                        <Link
+                          href="/checkout"
+                          state={{ plan, network: network?.name, duration: activeDuration, amount: price }}
+                          data-testid={`button-select-${plan.id}`}
+                        >
+                          <Button
+                            className={`w-full ${
+                              plan.popular
+                                ? "bg-primary text-primary-foreground hover:bg-primary/90 glow-primary-hover"
+                                : "bg-secondary/20 text-secondary border border-secondary/40 hover:bg-secondary/30"
+                            }`}
+                          >
+                            Get {durationLabel} Plan
+                          </Button>
+                        </Link>
+                      ) : (
                         <Button
+                          onClick={() => navigate("/signup")}
                           className={`w-full ${
                             plan.popular
                               ? "bg-primary text-primary-foreground hover:bg-primary/90 glow-primary-hover"
                               : "bg-secondary/20 text-secondary border border-secondary/40 hover:bg-secondary/30"
                           }`}
                         >
-                          Get {durationLabel} Plan
+                          Sign Up to Get Started
                         </Button>
-                      </Link>
+                      )
                     ) : (
                       <Link href="/contact">
                         <Button variant="outline" className="w-full border-border hover:border-primary/50">

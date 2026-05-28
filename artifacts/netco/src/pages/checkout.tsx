@@ -14,6 +14,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Check, Smartphone, CreditCard, Loader2, CheckCircle, XCircle, Clock, ChevronRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
 
 type PaymentState = "idle" | "initiating" | "prompt_sent" | "polling" | "completed" | "failed" | "timeout" | "error";
 
@@ -22,6 +23,15 @@ const STEPS = ["Plan Summary", "App & Device", "M-Pesa", "Payment"];
 export default function Checkout() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const { user, loading } = useAuth();
+
+  // Redirect non-authenticated users to login
+  useEffect(() => {
+    if (!loading && !user) {
+      toast({ title: "Please log in", description: "You need an account to checkout", variant: "destructive" });
+      navigate("/login");
+    }
+  }, [user, loading, navigate, toast]);
   const queryClient = useQueryClient();
 
   // Read plan state passed from pricing page
