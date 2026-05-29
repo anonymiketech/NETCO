@@ -803,11 +803,7 @@ export default function Admin() {
               </div>
             ) : (
               <div className="space-y-3">
-                {(servers as Array<{
-                  id: string; serverName: string; network: string; appType: string;
-                  planType: string; duration: string; originalName: string;
-                  fileSize: number | null; status: string; isFree?: boolean;
-                }>).map((server) => (
+                {(Array.isArray(servers) ? servers : []).map((server: any) => (
                   <div key={server.id} className={`glass-card rounded-xl p-4 border transition-all ${server.status === "active" ? "border-border" : "border-border/30 opacity-60"}`}>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                       <div className="flex-1 min-w-0 space-y-2">
