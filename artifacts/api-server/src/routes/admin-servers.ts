@@ -32,22 +32,21 @@ router.get("/admin/servers", async (req, res) => {
 router.post("/admin/servers", upload.single("configFile"), async (req, res) => {
   try {
     if (!req.file) {
-      res.status(400).json({ error: "Config file (.ehi or .hc) is required" });
-      return;
+      return res.status(400).json({ error: "Config file (.ehi or .hc) is required" });
     }
 
     const { serverName, network, appType, planType, duration } = req.body as Record<string, string>;
 
     if (!serverName || !network || !appType || !planType || !duration) {
-      res.status(400).json({ error: "All fields are required: serverName, network, appType, planType, duration" });
-      return;
+      return res.status(400).json({ error: "All fields are required: serverName, network, appType, planType, duration" });
     }
 
     const stored = await uploadConfigFile(req.file.buffer, req.file.originalname);
 
     const id = randomUUID();
     const now = new Date();
-    const [server] = await db
+
+    const result = await db
       .insert(configServersTable)
       .values({
         id,
@@ -67,12 +66,18 @@ router.post("/admin/servers", upload.single("configFile"), async (req, res) => {
       })
       .returning();
 
+    const server = result[0];
+
+    if (!server) {
+      return res.status(500).json({ error: "Failed to create server record" });
+    }
+
     req.log.info({ id, serverName, network, appType }, "Config server added");
-    res.status(201).json(server);
+    return res.status(201).json(server);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to add config server";
-    req.log.error({ err, body: req.body }, "Error adding config server");
-    res.status(500).json({ error: message });
+    req.log.error({ err }, "Error adding config server");
+    return res.status(500).json({ error: message });
   }
 });
 
