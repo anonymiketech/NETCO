@@ -256,21 +256,56 @@ export default function Admin() {
     }
     setUploading(true);
     try {
-      const fd = new FormData();
-      fd.append("serverName", form.serverName.trim());
-      fd.append("network", form.network);
-      fd.append("appType", form.appType);
-      fd.append("planType", form.planType);
-      fd.append("duration", form.duration);
-      fd.append("configFile", form.file);
-      const url = apiUrl("/api/admin/servers");
-      console.log("[v0] Uploading config file to:", url);
-      const res = await fetch(url, { method: "POST", body: fd });
-      console.log("[v0] Upload response:", res.status);
+      // Step 1: Upload file directly to Supabase Storage
+      const fileName = `${form.network}_${form.appType}_${Date.now()}_${form.file.name}`;
+      console.log("[v0] Uploading to Supabase Storage:", fileName);
+      
+      const { data: uploadData, error: uploadError } = await supabase
+        .storage
+        .from("vpn-configs")
+        .upload(fileName, form.file, {
+          contentType: "application/octet-stream",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw new Error(`Supabase upload failed: ${uploadError.message}`);
+      }
+
+      // Step 2: Get the public URL
+      const { data: publicUrlData } = supabase
+        .storage
+        .from("vpn-configs")
+        .getPublicUrl(fileName);
+      
+      const fileUrl = publicUrlData.publicUrl;
+      console.log("[v0] File URL generated:", fileUrl);
+
+      // Step 3: Call API to save metadata (simple JSON, no file handling)
+      const url = apiUrl("/api/admin/servers/metadata");
+      console.log("[v0] Saving server metadata to:", url);
+      
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          serverName: form.serverName.trim(),
+          network: form.network,
+          appType: form.appType,
+          planType: form.planType,
+          duration: form.duration,
+          fileUrl,
+          originalName: form.file.name,
+          fileSize: form.file.size,
+        }),
+      });
+
       if (!res.ok) {
         const err = await res.json() as { error?: string };
-        throw new Error(err.error ?? `Upload failed with status ${res.status}`);
+        throw new Error(err.error ?? `Failed to save server metadata with status ${res.status}`);
       }
+
+      console.log("[v0] Server metadata saved successfully");
       await queryClient.invalidateQueries({ queryKey: getListConfigServersQueryKey() });
       setShowAddForm(false);
       setForm(EMPTY_FORM);
