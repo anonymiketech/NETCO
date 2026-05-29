@@ -29,6 +29,53 @@ router.get("/admin/servers", async (req, res) => {
   res.json(servers);
 });
 
+// New endpoint: Accept only JSON metadata (file already uploaded to Supabase)
+router.post("/admin/servers/metadata", async (req, res) => {
+  try {
+    const { serverName, network, appType, planType, duration, fileUrl, originalName, fileSize } = req.body as Record<string, unknown>;
+
+    if (!serverName || !network || !appType || !planType || !duration || !fileUrl) {
+      return res.status(400).json({ error: "All fields required: serverName, network, appType, planType, duration, fileUrl, originalName, fileSize" });
+    }
+
+    const id = randomUUID();
+    const now = new Date();
+
+    const result = await db
+      .insert(configServersTable)
+      .values({
+        id,
+        serverName: String(serverName),
+        network: String(network),
+        appType: String(appType),
+        planType: String(planType),
+        duration: String(duration),
+        filename: `supabase-${id}`,
+        originalName: String(originalName || "config"),
+        fileSize: Number(fileSize) || 0,
+        fileUrl: String(fileUrl),
+        status: "active",
+        isFree: false,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+
+    const server = result[0];
+
+    if (!server) {
+      return res.status(500).json({ error: "Failed to create server record" });
+    }
+
+    req.log.info({ id, serverName, network, appType }, "Config server added via metadata endpoint");
+    return res.status(201).json(server);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to add config server";
+    req.log.error({ err }, "Error adding config server via metadata");
+    return res.status(500).json({ error: message });
+  }
+});
+
 router.post("/admin/servers", upload.single("configFile"), async (req, res) => {
   try {
     if (!req.file) {
