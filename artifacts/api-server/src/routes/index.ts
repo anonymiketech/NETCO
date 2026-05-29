@@ -23,6 +23,7 @@ router.use("/contact", contactRouter);
 router.use(statsRouter);
 router.use("/admin", adminServersRouter);
 router.use("/admin", statsRouter);
+router.use("/admin", adminOrdersRouter);
 router.use("/admin", adminAnnouncementsRouter);
 router.use("/auth/email", authEmailRouter);
 router.use("/auth/profile", authProfileRouter);
