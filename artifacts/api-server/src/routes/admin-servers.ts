@@ -4,7 +4,7 @@ import path from "path";
 import { randomUUID } from "crypto";
 import { db, configServersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { uploadConfigFile, downloadConfigFile, deleteConfigFile } from "../lib/storage";
+import { uploadConfigFile, downloadConfigFile, deleteConfigFile, getSupabaseAdmin } from "../lib/storage";
 
 const router = Router();
 
@@ -29,15 +29,42 @@ router.get("/admin/servers", async (req, res) => {
   res.json(servers);
 });
 
-// New endpoint: Accept only JSON metadata (file already uploaded to Supabase)
+// New endpoint: Accept file and metadata, upload to Supabase using service role (bypasses RLS)
 router.post("/admin/servers/metadata", async (req, res) => {
   try {
-    const { serverName, network, appType, planType, duration, fileUrl, originalName, fileSize } = req.body as Record<string, unknown>;
+    const { serverName, network, appType, planType, duration, originalName, fileSize, fileBuffer } = req.body as Record<string, unknown>;
 
-    if (!serverName || !network || !appType || !planType || !duration || !fileUrl) {
-      return res.status(400).json({ error: "All fields required: serverName, network, appType, planType, duration, fileUrl, originalName, fileSize" });
+    if (!serverName || !network || !appType || !planType || !duration || !originalName || !fileBuffer) {
+      return res.status(400).json({ error: "All fields required: serverName, network, appType, planType, duration, originalName, fileBuffer (base64)" });
     }
 
+    // Decode the base64 file buffer sent from frontend
+    const buffer = Buffer.from(fileBuffer as string, 'base64');
+    
+    // Upload to Supabase using service role (bypasses RLS policies)
+    const fileName = `${network}_${appType}_${Date.now()}_${originalName}`;
+    
+    const { data: uploadData, error: uploadError } = await getSupabaseAdmin()
+      .storage
+      .from("vpn-configs")
+      .upload(fileName, buffer, {
+        contentType: "application/octet-stream",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      throw new Error(`Supabase upload failed: ${uploadError.message}`);
+    }
+
+    // Get public URL for the uploaded file
+    const { data: publicUrlData } = getSupabaseAdmin()
+      .storage
+      .from("vpn-configs")
+      .getPublicUrl(fileName);
+
+    const fileUrl = publicUrlData.publicUrl;
+
+    // Save server metadata to database
     const id = randomUUID();
     const now = new Date();
 
@@ -50,10 +77,10 @@ router.post("/admin/servers/metadata", async (req, res) => {
         appType: String(appType),
         planType: String(planType),
         duration: String(duration),
-        filename: `supabase-${id}`,
-        originalName: String(originalName || "config"),
+        filename: fileName,
+        originalName: String(originalName),
         fileSize: Number(fileSize) || 0,
-        fileUrl: String(fileUrl),
+        fileUrl,
         status: "active",
         isFree: false,
         createdAt: now,

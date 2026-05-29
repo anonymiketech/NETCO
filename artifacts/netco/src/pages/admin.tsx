@@ -256,91 +256,49 @@ export default function Admin() {
     }
     setUploading(true);
     try {
-      console.log("[v0] Starting server upload process...");
-      console.log("[v0] File:", { name: form.file.name, size: form.file.size, type: form.file.type });
-      
-      // Step 1: Upload file directly to Supabase Storage
-      const fileName = `${form.network}_${form.appType}_${Date.now()}_${form.file.name}`;
-      console.log("[v0] Uploading to Supabase Storage bucket: vpn-configs");
-      console.log("[v0] File name:", fileName);
-      
-      const { data: uploadData, error: uploadError } = await supabase
-        .storage
-        .from("vpn-configs")
-        .upload(fileName, form.file, {
-          contentType: "application/octet-stream",
-          upsert: false,
-        });
+      // Convert file to base64 for transport to backend
+      const fileArrayBuffer = await form.file.arrayBuffer();
+      const fileBytes = new Uint8Array(fileArrayBuffer);
+      const fileBase64 = btoa(String.fromCharCode(...fileBytes));
 
-      if (uploadError) {
-        console.error("[v0] Supabase upload error details:", uploadError);
-        throw new Error(`Supabase upload failed: ${uploadError.message}`);
-      }
-
-      console.log("[v0] File uploaded successfully to Supabase:", uploadData);
-
-      // Step 2: Get the public URL
-      const { data: publicUrlData } = supabase
-        .storage
-        .from("vpn-configs")
-        .getPublicUrl(fileName);
-      
-      const fileUrl = publicUrlData.publicUrl;
-      console.log("[v0] Public file URL:", fileUrl);
-
-      // Step 3: Call API to save metadata (simple JSON, no file handling)
+      // Call backend API to handle file upload to Supabase using service role (bypasses RLS)
       const url = apiUrl("/api/admin/servers/metadata");
-      console.log("[v0] Calling metadata API:", url);
-      
-      const metadata = {
-        serverName: form.serverName.trim(),
-        network: form.network,
-        appType: form.appType,
-        planType: form.planType,
-        duration: form.duration,
-        fileUrl,
-        originalName: form.file.name,
-        fileSize: form.file.size,
-      };
-      console.log("[v0] Metadata payload:", metadata);
       
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(metadata),
+        body: JSON.stringify({
+          serverName: form.serverName.trim(),
+          network: form.network,
+          appType: form.appType,
+          planType: form.planType,
+          duration: form.duration,
+          originalName: form.file.name,
+          fileSize: form.file.size,
+          fileBuffer: fileBase64,
+        }),
       });
 
-      console.log("[v0] Metadata API response status:", res.status);
-      
       if (!res.ok) {
-        const contentType = res.headers.get("content-type");
-        console.log("[v0] Response content-type:", contentType);
-        
-        let err: { error?: string } = {};
+        let errorMessage = `Server error (${res.status})`;
         try {
+          const contentType = res.headers.get("content-type");
           if (contentType?.includes("application/json")) {
-            err = await res.json();
-          } else {
-            const text = await res.text();
-            console.error("[v0] Non-JSON response:", text.substring(0, 200));
-            throw new Error(`Server returned non-JSON response (${res.status})`);
+            const err = await res.json() as { error?: string };
+            errorMessage = err.error ?? errorMessage;
           }
-        } catch (parseErr) {
-          console.error("[v0] Failed to parse response:", parseErr);
-          throw new Error(`Failed to parse server response: ${parseErr instanceof Error ? parseErr.message : "Unknown error"}`);
+        } catch {
+          // If response is not JSON, use default error
         }
-        
-        throw new Error(err.error ?? `Failed to save server metadata with status ${res.status}`);
+        throw new Error(errorMessage);
       }
 
-      console.log("[v0] Server metadata saved successfully");
       await queryClient.invalidateQueries({ queryKey: getListConfigServersQueryKey() });
       setShowAddForm(false);
       setForm(EMPTY_FORM);
       toast({ title: "Config server added", description: `"${form.serverName}" is now live.` });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Upload failed - network error or server unreachable";
-      console.error("[v0] Upload error:", { message, error: err });
+      const message = err instanceof Error ? err.message : "Upload failed";
       toast({ title: "Upload failed", description: message, variant: "destructive" });
     } finally {
       setUploading(false);

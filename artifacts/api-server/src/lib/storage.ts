@@ -21,7 +21,7 @@ export const BUCKET = "vpn-configs";
 
 let _supabaseAdmin: SupabaseClient | null = null;
 
-function getSupabaseAdmin(): SupabaseClient {
+export function getSupabaseAdmin(): SupabaseClient {
   if (!_supabaseAdmin) {
     _supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false },
