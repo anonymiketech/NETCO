@@ -59,6 +59,7 @@ router.post("/admin/servers", upload.single("configFile"), async (req, res) => {
         filename: stored.filename,
         originalName: stored.originalName,
         fileSize: stored.fileSize,
+        fileUrl: stored.fileUrl,
         status: "active",
         isFree: false,
         createdAt: now,
@@ -137,6 +138,7 @@ router.put("/admin/servers/:id/file", upload.single("configFile"), async (req, r
         filename: stored.filename,
         originalName: stored.originalName,
         fileSize: stored.fileSize,
+        fileUrl: stored.fileUrl,
       })
       .where(eq(configServersTable.id, id))
       .returning();

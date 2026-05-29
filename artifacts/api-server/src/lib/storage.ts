@@ -17,7 +17,7 @@ if (!useSupabase) {
   console.log("[v0] Supabase storage configured and enabled");
 }
 
-export const BUCKET = "config-files";
+export const BUCKET = "vpn-configs";
 
 let _supabaseAdmin: SupabaseClient | null = null;
 
@@ -54,9 +54,10 @@ async function ensureBucket() {
 export async function uploadConfigFile(
   buffer: Buffer,
   originalName: string,
-): Promise<{ filename: string; originalName: string; fileSize: number }> {
+): Promise<{ filename: string; originalName: string; fileSize: number; fileUrl: string | null }> {
   const ext = path.extname(originalName).toLowerCase();
   const filename = `${randomUUID()}${ext}`;
+  let fileUrl: string | null = null;
 
   try {
     if (useSupabase) {
@@ -71,7 +72,12 @@ export async function uploadConfigFile(
       if (error) {
         throw new Error(`Storage upload failed: ${error.message}`);
       }
-      console.log("[v0] Successfully uploaded to Supabase:", filename);
+      // Generate public URL for the uploaded file
+      const { data: publicUrlData } = getSupabaseAdmin()
+        .storage.from(BUCKET)
+        .getPublicUrl(filename);
+      fileUrl = publicUrlData.publicUrl;
+      console.log("[v0] Successfully uploaded to Supabase:", { filename, fileUrl });
     } else {
       // Local disk fallback
       console.log("[v0] Uploading to local disk:", { filename, size: buffer.byteLength });
@@ -84,7 +90,7 @@ export async function uploadConfigFile(
     throw err;
   }
 
-  return { filename, originalName, fileSize: buffer.byteLength };
+  return { filename, originalName, fileSize: buffer.byteLength, fileUrl };
 }
 
 export async function downloadConfigFile(filename: string): Promise<Buffer> {
