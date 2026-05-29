@@ -233,12 +233,12 @@ export default function Admin() {
     }
   };
 
-  const statCards = stats
+  const statCards = stats && typeof stats === 'object' && stats.totalOrders !== undefined
     ? [
-        { icon: ShoppingCart, label: "Total Orders", value: stats.totalOrders.toLocaleString(), color: "text-primary", bg: "bg-primary/10 border-primary/20" },
-        { icon: DollarSign, label: "Total Revenue", value: `Ksh ${stats.totalRevenue.toLocaleString()}`, color: "text-green-400", bg: "bg-green-400/10 border-green-400/20" },
-        { icon: Users, label: "Active Users", value: stats.activeUsers.toLocaleString(), color: "text-secondary", bg: "bg-secondary/10 border-secondary/20" },
-        { icon: Server, label: "Active Plans", value: stats.activePlans.toLocaleString(), color: "text-yellow-400", bg: "bg-yellow-400/10 border-yellow-400/20" },
+        { icon: ShoppingCart, label: "Total Orders", value: (stats.totalOrders ?? 0).toLocaleString(), color: "text-primary", bg: "bg-primary/10 border-primary/20" },
+        { icon: DollarSign, label: "Total Revenue", value: `Ksh ${(stats.totalRevenue ?? 0).toLocaleString()}`, color: "text-green-400", bg: "bg-green-400/10 border-green-400/20" },
+        { icon: Users, label: "Active Users", value: (stats.activeUsers ?? 0).toLocaleString(), color: "text-secondary", bg: "bg-secondary/10 border-secondary/20" },
+        { icon: Server, label: "Active Plans", value: (stats.activePlans ?? 0).toLocaleString(), color: "text-yellow-400", bg: "bg-yellow-400/10 border-yellow-400/20" },
       ]
     : [];
 
