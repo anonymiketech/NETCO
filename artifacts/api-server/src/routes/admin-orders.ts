@@ -17,7 +17,7 @@ function expiryFromDuration(duration: string): Date {
   return now;
 }
 
-router.get("/admin/orders", async (req, res) => {
+router.get("/orders", async (req, res) => {
   try {
     const { status, search, limit = "50", offset = "0" } = req.query as Record<string, string>;
 
@@ -54,7 +54,7 @@ router.get("/admin/orders", async (req, res) => {
   }
 });
 
-router.post("/admin/orders/:id/fulfill", async (req, res) => {
+router.post("/orders/:id/fulfill", async (req, res) => {
   try {
     const { id } = req.params;
     const { configServerId } = req.body as { configServerId?: string };
@@ -131,7 +131,7 @@ router.post("/admin/orders/:id/fulfill", async (req, res) => {
   }
 });
 
-router.patch("/admin/orders/:id/status", async (req, res) => {
+router.patch("/orders/:id/status", async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body as { status?: string };

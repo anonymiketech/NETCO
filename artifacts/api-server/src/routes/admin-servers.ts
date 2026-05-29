@@ -21,7 +21,7 @@ const upload = multer({
   },
 });
 
-router.get("/admin/servers", async (req, res) => {
+router.get("/servers", async (req, res) => {
   const servers = await db
     .select()
     .from(configServersTable)
@@ -30,7 +30,7 @@ router.get("/admin/servers", async (req, res) => {
 });
 
 // New endpoint: Accept file and metadata, upload to Supabase using service role (bypasses RLS)
-router.post("/admin/servers/metadata", async (req, res) => {
+router.post("/servers/metadata", async (req, res) => {
   try {
     const { serverName, network, appType, planType, duration, originalName, fileSize, fileBuffer } = req.body as Record<string, unknown>;
 
@@ -103,7 +103,7 @@ router.post("/admin/servers/metadata", async (req, res) => {
   }
 });
 
-router.post("/admin/servers", upload.single("configFile"), async (req, res) => {
+router.post("/servers", upload.single("configFile"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "Config file (.ehi or .hc) is required" });
@@ -155,7 +155,7 @@ router.post("/admin/servers", upload.single("configFile"), async (req, res) => {
   }
 });
 
-router.patch("/admin/servers/:id", async (req, res) => {
+router.patch("/servers/:id", async (req, res) => {
   const id = req.params["id"] as string;
   const { status, isFree } = req.body as { status?: string; isFree?: boolean };
 
@@ -187,7 +187,7 @@ router.patch("/admin/servers/:id", async (req, res) => {
   res.json(updated);
 });
 
-router.put("/admin/servers/:id/file", upload.single("configFile"), async (req, res) => {
+router.put("/servers/:id/file", upload.single("configFile"), async (req, res) => {
   try {
     const id = req.params["id"] as string;
 
@@ -231,7 +231,7 @@ router.put("/admin/servers/:id/file", upload.single("configFile"), async (req, r
   }
 });
 
-router.delete("/admin/servers/:id", async (req, res) => {
+router.delete("/servers/:id", async (req, res) => {
   const id = req.params["id"] as string;
 
   const [existing] = await db
@@ -252,7 +252,7 @@ router.delete("/admin/servers/:id", async (req, res) => {
   res.json({ success: true });
 });
 
-router.get("/admin/servers/:id/download", async (req, res) => {
+router.get("/servers/:id/download", async (req, res) => {
   const id = req.params["id"] as string;
 
   const [server] = await db

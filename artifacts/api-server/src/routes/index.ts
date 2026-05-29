@@ -21,9 +21,9 @@ router.use("/payment", paymentRouter);
 router.use("/plans", plansRouter);
 router.use("/contact", contactRouter);
 router.use(statsRouter);
-router.use(adminServersRouter);
-router.use(adminOrdersRouter);
-router.use(adminAnnouncementsRouter);
+router.use("/admin", adminServersRouter);
+router.use("/admin", statsRouter);
+router.use("/admin", adminAnnouncementsRouter);
 router.use("/auth/email", authEmailRouter);
 router.use("/auth/profile", authProfileRouter);
 
