@@ -155,10 +155,10 @@ export default function Pricing() {
                       )}
                     </div>
 
-                    {price > 0 ? (
+                    {price && price > 0 ? (
                       <div className="mb-6">
                         <span className="text-4xl font-heading font-bold text-primary">
-                          Ksh {price.toLocaleString()}
+                          Ksh {(price ?? 0).toLocaleString()}
                         </span>
                         <span className="text-muted-foreground text-sm"> / {durationLabel}</span>
                       </div>
