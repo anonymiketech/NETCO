@@ -51,7 +51,7 @@ router.get("/server-status", (_req, res) => {
   ]);
 });
 
-router.get("/admin/stats", (_req, res) => {
+router.get("/admin-stats", (_req, res) => {
   res.json({
     totalOrders: 8432,
     totalRevenue: 4251600,

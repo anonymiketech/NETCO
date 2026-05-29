@@ -17,7 +17,7 @@ const SendAnnouncementBody = z.object({
 });
 
 // Send announcement to users
-router.post("/admin/announcements/send", async (req, res) => {
+router.post("/announcements/send", async (req, res) => {
   try {
     const parsed = SendAnnouncementBody.safeParse(req.body);
     if (!parsed.success) {
