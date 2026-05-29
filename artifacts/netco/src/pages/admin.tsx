@@ -458,7 +458,7 @@ export default function Admin() {
                     <ResponsiveContainer width="100%" height={180}>
                       <PieChart>
                         <Pie data={stats?.revenueByNetwork ?? []} dataKey="revenue" nameKey="network" cx="50%" cy="50%" innerRadius={50} outerRadius={80}>
-                          {stats?.revenueByNetwork.map((_, i) => (
+                          {(Array.isArray(stats?.revenueByNetwork) ? stats?.revenueByNetwork : []).map((_, i) => (
                             <Cell key={i} fill={NETWORK_COLORS[i % NETWORK_COLORS.length]} />
                           ))}
                         </Pie>
@@ -466,7 +466,7 @@ export default function Admin() {
                       </PieChart>
                     </ResponsiveContainer>
                     <div className="space-y-2">
-                      {stats?.revenueByNetwork.map((n, i) => (
+                      {(Array.isArray(stats?.revenueByNetwork) ? stats?.revenueByNetwork : []).map((n, i) => (
                         <div key={n.network} className="flex items-center justify-between text-sm">
                           <div className="flex items-center gap-2">
                             <div className="w-2.5 h-2.5 rounded-full" style={{ background: NETWORK_COLORS[i % NETWORK_COLORS.length] }} />
@@ -504,7 +504,7 @@ export default function Admin() {
                             <td className="py-3 px-4 text-right"><div className="h-4 bg-muted/20 rounded w-20 animate-pulse ml-auto" /></td>
                           </tr>
                         ))
-                      : stats?.revenueByMonth.slice().reverse().slice(0, 6).map((row) => (
+                      : (Array.isArray(stats?.revenueByMonth) ? stats?.revenueByMonth : []).slice().reverse().slice(0, 6).map((row) => (
                           <tr key={row.month} className="border-b border-border/50 hover:bg-muted/5 transition-colors">
                             <td className="py-3 px-4 font-medium">{row.month}</td>
                             <td className="py-3 px-4 text-right text-muted-foreground">{row.orders.toLocaleString()}</td>
