@@ -12,6 +12,7 @@ export const configServersTable = pgTable("config_servers", {
   filename: text("filename").notNull(),
   originalName: text("original_name").notNull(),
   fileSize: integer("file_size"),
+  fileUrl: text("file_url"),
   status: text("status").notNull().default("active"),
   isFree: boolean("is_free").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
