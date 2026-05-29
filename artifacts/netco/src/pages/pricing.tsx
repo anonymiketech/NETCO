@@ -77,7 +77,7 @@ export default function Pricing() {
         {/* Category tabs */}
         {network && (
           <div className="flex flex-wrap justify-center gap-2">
-            {network.categories.map((cat, i) => (
+            {(Array.isArray(network.categories) ? network.categories : []).map((cat, i) => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(i)}
@@ -126,7 +126,7 @@ export default function Pricing() {
                   </div>
                 </div>
               ))
-            : category?.plans.map((plan) => {
+            : (Array.isArray(category?.plans) ? category?.plans : []).map((plan) => {
                 const price = plan[durObj.priceKey];
                 const durationLabel = plan[durObj.labelKey];
                 return (
