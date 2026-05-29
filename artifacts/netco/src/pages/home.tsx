@@ -21,7 +21,7 @@ export default function Home() {
   const { data: stats } = useGetPlatformStats();
   const { data: packages } = useListPackages();
   const { data: servers = [] } = useListConfigServers();
-  const activeServers = servers.filter((s: any) => s.status === "active");
+  const activeServers = (Array.isArray(servers) ? servers : []).filter((s: any) => s.status === "active");
 
   const handleProtectedLink = (href: string) => {
     if (!user) {
