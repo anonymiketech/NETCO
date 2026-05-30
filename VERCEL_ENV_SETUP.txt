@@ -1,0 +1,104 @@
+═══════════════════════════════════════════════════════════════════════════════
+                    VERCEL ENVIRONMENT VARIABLES SETUP
+                              NETCO Platform
+═══════════════════════════════════════════════════════════════════════════════
+
+CRITICAL: You MUST add this environment variable for your app to work:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 1: Find Your Backend API URL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Where is your API server running?
+
+Option A: Replit
+  - Go to your Replit project
+  - Look at the URL in the address bar
+  - Example: https://netco-api.replit.dev
+  - Copy this URL
+
+Option B: Other Server
+  - You have your backend URL already
+  - Example: https://api.example.com or https://your-server.com
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 2: Add to Vercel
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Go to: https://vercel.com/dashboard
+2. Click on your "netco-platform" project
+3. Go to Settings (⚙️ icon) → Environment Variables
+4. Click "Add New" or "Add..."
+5. Fill in:
+   - Name/Key: VITE_API_BACKEND_URL
+   - Value: [Your backend URL from Step 1]
+   
+6. Select Environment: ALL (Production, Preview, Development)
+7. Click "Save" or "Add"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 3: Redeploy
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Option A: Automatic (if connected to GitHub)
+  - Push your changes to GitHub
+  - Vercel will automatically deploy
+
+Option B: Manual Redeploy
+  1. Go to Vercel Dashboard → Your Project → Deployments
+  2. Find the latest deployment
+  3. Click the three dots (⋯) → Redeploy
+  4. Wait for build to complete (2-3 minutes)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 4: Verify It Works
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Visit: https://netcom.anonymiketech.online
+2. Try to upload a config server
+3. Check browser console (F12 → Console)
+4. If errors, check Vercel logs:
+   - Go to Project → Logs → Deployments
+   - Look for error messages
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+COMMON MISTAKES TO AVOID
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+❌ DON'T: Forget to set the environment variable
+   → App will show error "VITE_API_BACKEND_URL is not set"
+
+❌ DON'T: Set wrong URL
+   → File uploads will fail with connection errors
+   → Example wrong: http://localhost:8080 (only works locally)
+
+❌ DON'T: Forget to redeploy after adding variable
+   → Changes won't take effect without redeploy
+
+❌ DON'T: Include trailing slash in URL
+   → Wrong: https://api.example.com/
+   → Right: https://api.example.com
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IF SOMETHING DOESN'T WORK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Error: "Cannot read properties of undefined"
+  → Backend URL is wrong or backend is down
+  → Fix: Check VITE_API_BACKEND_URL is correct
+
+Error: 404 on file upload
+  → API endpoint doesn't exist on backend
+  → Fix: Verify backend is running and has API routes
+
+Error: 405 Method Not Allowed
+  → Backend doesn't accept POST requests
+  → Fix: Check backend has proper route handlers
+
+Error: CORS errors in console
+  → Backend doesn't allow requests from Vercel
+  → Fix: Add CORS headers to backend (already configured)
+
+Need more help? See VERCEL_DEPLOYMENT.md for detailed troubleshooting
+
+═══════════════════════════════════════════════════════════════════════════════
