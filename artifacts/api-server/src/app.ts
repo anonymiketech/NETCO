@@ -4,7 +4,6 @@ import pinoHttp from "pino-http";
 import multer from "multer";
 import router from "./routes";
 import { logger } from "./lib/logger";
-import { setupFrontendServing } from "./serve-frontend";
 
 const app: Express = express();
 
@@ -45,9 +44,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 // Mount API routes
 app.use("/api", router);
-
-// Serve frontend (must be after API routes so /api/* is handled first)
-setupFrontendServing(app);
 
 // Error handler (must be last)
 app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {

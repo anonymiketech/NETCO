@@ -1,66 +1,78 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
 
 /**
- * Catch-all API route handler that proxies requests to the backend API server
- * This acts as a bridge between the Vercel frontend and your backend API
+ * Catch-all API route handler for Vercel deployment
+ * This proxies API requests based on the VITE_API_BACKEND_URL environment variable
  */
-
-const API_BACKEND_URL = process.env.VITE_API_BACKEND_URL || "http://localhost:8080";
 
 export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
+  // Get backend URL from environment - must be set in Vercel
+  const backendUrl = process.env.VITE_API_BACKEND_URL;
+  
+  if (!backendUrl) {
+    return res.status(500).json({
+      error: "Configuration Error",
+      message: "VITE_API_BACKEND_URL environment variable is not set",
+    });
+  }
+
   try {
     // Get the path from the catch-all route
     const pathArray = req.query.path as string[];
     const path = pathArray ? `/${pathArray.join("/")}` : "/";
 
     // Build the full URL to the backend
-    const backendUrl = `${API_BACKEND_URL}${path}`;
+    const fullUrl = `${backendUrl}${path}`;
+    
+    // Parse query string if present
+    const searchParams = new URLSearchParams(req.query as Record<string, string>);
+    const queryString = searchParams.toString();
+    const urlWithQuery = queryString ? `${fullUrl}?${queryString}` : fullUrl;
 
-    // Log for debugging (remove in production)
-    console.log(`[API Proxy] ${req.method} ${path} -> ${backendUrl}`);
-
-    // Prepare request options
-    const requestOptions = {
-      method: req.method,
-      headers: {
-        ...req.headers,
-        // Remove host header to avoid conflicts
-        host: new URL(backendUrl).hostname,
-      },
-      body: req.method !== "GET" && req.method !== "HEAD" ? JSON.stringify(req.body) : undefined,
-    };
+    // Prepare request body
+    let body: string | undefined;
+    if (req.method !== "GET" && req.method !== "HEAD" && req.body) {
+      body = typeof req.body === "string" ? req.body : JSON.stringify(req.body);
+    }
 
     // Make the request to the backend
-    const response = await fetch(backendUrl, requestOptions as RequestInit);
-
-    // Get response data
-    const data = await response.text();
-
-    // Copy headers from backend response
-    Object.entries(response.headers.raw?.() || {}).forEach(([key, value]) => {
-      // Skip certain headers that shouldn't be proxied
-      if (!["content-encoding", "transfer-encoding"].includes(key.toLowerCase())) {
-        res.setHeader(key, value);
-      }
+    const response = await fetch(urlWithQuery, {
+      method: req.method,
+      headers: {
+        "Content-Type": "application/json",
+        ...(req.headers["authorization"] && {
+          authorization: req.headers["authorization"],
+        }),
+      },
+      body,
     });
 
-    // Set status code and send response
+    // Get response data
+    const responseText = await response.text();
+    
+    // Set status code
     res.status(response.status);
     
-    // Try to parse as JSON, otherwise send as text
+    // Set CORS headers
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+    
+    // Try to parse and return as JSON, otherwise return as text
     try {
-      res.json(JSON.parse(data));
+      const jsonData = JSON.parse(responseText);
+      res.json(jsonData);
     } catch {
-      res.send(data);
+      res.send(responseText);
     }
   } catch (error) {
     console.error("[API Proxy Error]", error);
     res.status(500).json({
       error: "Internal Server Error",
-      message: error instanceof Error ? error.message : "Unknown error occurred",
+      message: error instanceof Error ? error.message : "Unknown error",
     });
   }
 }
