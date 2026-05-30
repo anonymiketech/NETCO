@@ -71,6 +71,13 @@ export default defineConfig({
       strict: true,
     },
     middlewareMode: false,
+    proxy: {
+      "/api": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        rewrite: (path) => path,
+      },
+    },
   },
   preview: {
     port,
